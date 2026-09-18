@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- FORCER LE RAFRAÎCHISSEMENT DU CACHE -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    
+    <title>SMMCPAN - Dashboard Mobile</title>
+    
+    <link rel="manifest" href="manifest.json">
+
+    <!-- ENREGISTREMENT DE LA PWA -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').then(reg => {
+                    console.log('Service Worker enregistré avec succès.', reg);
+                }).catch(err => {
+                    console.log('Erreur lors de l\'enregistrement du Service Worker', err);
+                });
+            });
+        }
+    </script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        cpanBg: '#000000',
+                        cpanCard: '#0f0f0f',
+                        cpanInput: '#1a1a1a',
+                        cpanAccent: '#b89020', 
+                        cpanAccentLight: '#d6aa27'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .hide-scroll::-webkit-scrollbar { display: none; }
+        .hide-scroll { -ms-overflow-style: none; scrollbar-width: none; }
+        textarea::-webkit-scrollbar, div::-webkit-scrollbar { width: 6px; }
+        textarea::-webkit-scrollbar-track, div::-webkit-scrollbar-track { background: transparent; }
+        textarea::-webkit-scrollbar-thumb, div::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+    </style>
+</head>
+<body class="bg-cpanBg text-white font-sans antialiased min-h-screen relative overflow-x-hidden transition-colors duration-300" id="body-theme">
+
+    <!-- ÉCRAN DE CONNEXION -->
+    <div id="login-screen" class="hidden fixed inset-0 bg-black z-50 flex items-center justify-center p-6">
+        <div class="bg-cpanCard border border-gray-800 rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center">
+            <div class="w-14 h-14 bg-yellow-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fa-regular fa-lightbulb text-black text-2xl"></i>
+            </div>
+            <h2 class="text-2xl font-black text-white tracking-wider mb-1">SMM<span class="text-cpanAccentLight">CPAN</span></h2>
+            <p class="text-xs text-gray-500 mb-6">Connectez-vous à votre espace</p>
+            <div class="space-y-4 text-left">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Email</label>
+                    <input type="email" id="login-email" value="abderrahim.agnuaou@gmail.com" class="w-full bg-cpanInput rounded-xl py-3 px-4 text-white text-sm border border-gray-800 focus:border-cpanAccent outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Mot de passe</label>
+                    <input type="password" value="********" class="w-full bg-cpanInput rounded-xl py-3 px-4 text-white text-sm border border-gray-800 focus:border-cpanAccent outline-none">
+                </div>
+                <button id="login-submit-btn" class="w-full bg-cpanAccent text-black font-bold py-3.5 rounded-xl shadow-lg mt-2">
+                    Se connecter
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-md mx-auto min-h-screen bg-cpanBg pb-10 shadow-[0_0_50px_rgba(0,0,0,0.5)] relative" id="app-container">
+
+        <!-- En-tête -->
+        <header class="flex justify-between items-center p-4 border-b border-gray-900 relative z-30">
+            <div class="flex items-center gap-2">
+                <div class="w-9 h-9 bg-yellow-500 rounded-full flex items-center justify-center">
+                    <i class="fa-regular fa-lightbulb text-black text-xl"></i>
+                </div>
+                <div class="leading-none">
+                    <h1 class="text-[1.1rem] font-bold tracking-wide">SMMCPAN</h1>
+                    <p class="text-[0.55rem] text-gray-500 mt-1 font-semibold">"CHEAPEST, FASTEST, BEST"</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="theme-toggle-btn" class="w-9 h-9 bg-cpanInput rounded-xl flex items-center justify-center text-gray-400 hover:text-white transition">
+                    <i class="fa-solid fa-moon" id="theme-icon"></i>
+                </button>
+                <button class="w-9 h-9 bg-cpanInput rounded-xl flex items-center justify-center text-gray-500 hover:text-white transition">
+                    <i class="fa-solid fa-language"></i>
+                </button>
+                <button id="profile-btn" class="w-9 h-9 rounded-xl overflow-hidden bg-gray-800 hover:ring-2 hover:ring-cpanAccent transition-all focus:outline-none">
+                    <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=abderrahim&backgroundColor=333333&accessories=sunglasses" alt="Avatar" class="w-full h-full object-cover">
+                </button>
+                <button id="menu-btn" class="w-9 h-9 bg-cpanAccent text-white rounded-xl flex items-center justify-center relative">
+                    <i class="fa-solid fa-bars"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Dropdown Menu -->
+        <div id="dropdown-menu" class="hidden absolute top-16 right-4 w-48 bg-cpanCard border border-gray-800 rounded-2xl shadow-2xl z-50 overflow-hidden transform transition-all origin-top-right">
+            <a href="#" id="open-add-funds" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-cpanInput hover:text-white transition-colors border-b border-gray-800/50">
+                <i class="fa-solid fa-circle-plus text-cpanAccentLight w-4 text-center"></i> Add Funds
+            </a>
+            <a href="#" id="open-history-btn" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-cpanInput hover:text-white transition-colors border-b border-gray-800/50">
+                <i class="fa-solid fa-clock-rotate-left text-cpanAccentLight w-4 text-center"></i> Historique
+            </a>
+            <a href="#" id="open-tickets-btn" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-cpanInput hover:text-white transition-colors border-b border-gray-800/50">
+                <i class="fa-solid fa-headset text-cpanAccentLight w-4 text-center"></i> Support Tickets
+            </a>
+            <a href="#" id="open-settings-btn" class="flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-cpanInput hover:text-white transition-colors border-b border-gray-800/50">
+                <i class="fa-solid fa-gear text-gray-500 w-4 text-center"></i> Settings
+            </a>
+            <a href="#" id="logout-btn" class="flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-900/20 hover:text-red-300 transition-colors">
+                <i class="fa-solid fa-right-from-bracket w-4 text-center"></i> Log Out
+            </a>
+        </div>
+
+        <!-- Statistiques Globales -->
+        <div class="mx-4 mt-6 grid grid-cols-3 gap-3">
+            <div class="bg-cpanCard border border-gray-800 rounded-2xl p-3 flex flex-col items-center justify-center text-center shadow-lg">
+                <i class="fa-solid fa-chart-pie text-cpanAccentLight text-lg mb-1.5 opacity-80"></i>
+                <span id="global-orders-count" class="text-white font-bold text-sm tracking-wide">0</span>
+                <span class="text-[0.6rem] text-gray-500 uppercase tracking-widest mt-0.5">Orders</span>
+            </div>
+            <div class="bg-cpanCard border border-gray-800 rounded-2xl p-3 flex flex-col items-center justify-center text-center shadow-lg relative overflow-hidden">
+                <div class="absolute -right-2 -bottom-2 opacity-5 text-4xl"><i class="fa-solid fa-dollar-sign"></i></div>
+                <i class="fa-solid fa-sack-dollar text-cpanAccentLight text-lg mb-1.5 opacity-80"></i>
+                <span id="global-spent-count" class="text-cpanAccentLight font-bold text-sm tracking-wide">$0.00</span>
+                <span class="text-[0.6rem] text-gray-500 uppercase tracking-widest mt-0.5">Spent</span>
+            </div>
+            <div class="bg-cpanCard border border-gray-800 rounded-2xl p-3 flex flex-col items-center justify-center text-center shadow-lg">
+                <i class="fa-solid fa-ticket text-cpanAccentLight text-lg mb-1.5 opacity-80"></i>
+                <span id="global-tickets-count" class="text-white font-bold text-sm tracking-wide">0</span>
+                <span class="text-[0.6rem] text-gray-500 uppercase tracking-widest mt-0.5">Tickets</span>
+            </div>
+        </div>
+
+        <!-- Solde du compte -->
+        <div class="mx-4 mt-4 p-5 rounded-3xl bg-cpanCard border border-gray-800 relative overflow-hidden border-l-2 border-l-cpanAccentLight">
+            <div class="flex justify-between items-center mb-2">
+                <div class="text-sm text-gray-300">Account Balance</div>
+            </div>
+            <div class="text-[1.7rem] font-bold flex items-center gap-3">
+                <span id="balance-amount">$0.00</span>
+                <button id="toggle-balance" class="text-gray-500 hover:text-white transition-colors focus:outline-none">
+                    <i id="eye-icon" class="fa-solid fa-eye text-sm"></i>
+                </button>
+            </div>
+            <div class="absolute right-6 top-1/2 -translate-y-1/2 text-4xl opacity-80">
+                <i class="fa-solid fa-wallet text-yellow-500 drop-shadow-[0_0_12px_rgba(234,179,8,0.4)]"></i>
+            </div>
+        </div>
+
+        <!-- Onglets Navigation -->
+        <div class="mx-4 mt-6 flex gap-2 relative z-10">
+            <button id="tab-nav-new" class="flex-1 bg-[#1a1705] text-cpanAccentLight border-t border-l border-r border-yellow-900/40 py-3 rounded-t-2xl font-semibold flex items-center justify-center gap-2 shadow-lg transition-all text-xs sm:text-sm">
+                <i class="fa-solid fa-cart-plus"></i> New Order
+            </button>
+            <button id="tab-nav-subs" class="flex-1 bg-transparent text-gray-400 py-3 rounded-t-2xl font-semibold flex items-center justify-center gap-2 transition-all border-b border-gray-800 text-xs sm:text-sm">
+                <i class="fa-solid fa-rotate"></i> Subscriptions
+            </button>
+            <button id="tab-nav-fav" class="flex-1 bg-transparent text-gray-400 py-3 rounded-t-2xl font-semibold flex items-center justify-center gap-2 transition-all border-b border-gray-800 text-xs sm:text-sm">
+                <i class="fa-solid fa-star text-yellow-500"></i> Favourite
+            </button>
+            <button id="tab-nav-mass" class="flex-1 bg-transparent text-gray-400 py-3 rounded-t-2xl font-semibold flex items-center justify-center gap-2 transition-all border-b border-gray-800 text-xs sm:text-sm">
+                <i class="fa-solid fa-layer-group"></i> Mass
+            </button>
+        </div>
+
+        <!-- CONTENEUR FORMULAIRES -->
+        <div class="bg-cpanCard rounded-b-3xl rounded-tr-3xl p-5 mx-4 border border-gray-800 -mt-px relative z-0 mb-10">
+            
+            <!-- VUE : NEW ORDER -->
+            <div id="view-new-order" class="block">
+                <div class="grid grid-cols-4 gap-4 mb-8" id="platform-grid">
+                    <button data-platform="all" class="platform-btn aspect-square rounded-full bg-cpanAccent text-black flex items-center justify-center font-bold text-sm ring-2 ring-cpanAccent ring-offset-2 ring-offset-cpanCard transition-all">All</button>
+                    <button data-platform="instagram" class="platform-btn aspect-square rounded-full bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 text-white flex items-center justify-center text-3xl opacity-60 transition-all"><i class="fa-brands fa-instagram"></i></button>
+                    <button data-platform="tiktok" class="platform-btn aspect-square rounded-full bg-[#111111] text-white flex items-center justify-center text-2xl border border-gray-700 opacity-60 transition-all"><i class="fa-brands fa-tiktok"></i></button>
+                    <button data-platform="youtube" class="platform-btn aspect-square rounded-full bg-[#FF0000] text-white flex items-center justify-center text-2xl opacity-60 transition-all"><i class="fa-brands fa-youtube"></i></button>
+                    <button data-platform="facebook" class="platform-btn aspect-square rounded-full bg-[#1877F2] text-white flex items-center justify-center text-3xl opacity-60 transition-all"><i class="fa-brands fa-facebook"></i></button>
+                    <button data-platform="twitter" class="platform-btn aspect-square rounded-full bg-[#14171A] text-white flex items-center justify-center text-2xl border border-gray-700 opacity-60 transition-all"><i class="fa-brands fa-x-twitter"></i></button>
+                    <button data-platform="reddit" class="platform-btn aspect-square rounded-full bg-[#FF4500] text-white flex items-center justify-center text-3xl opacity-60 transition-all"><i class="fa-brands fa-reddit-alien"></i></button>
+                    <button data-platform="iptv" class="platform-btn col-span-1 aspect-square rounded-full bg-[#1c1c1c] text-white flex items-center justify-center text-xs font-semibold opacity-60 transition-all border border-gray-700 leading-tight text-center">+<br>More</button>
+                </div>
+
+                <div class="space-y-5">
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="block text-sm text-gray-300">Category</label>
+                            <button id="toggle-fav-service-btn" class="text-xs text-gray-400 hover:text-yellow-400 transition flex items-center gap-1">
+                                <i class="fa-regular fa-star" id="fav-icon-indicator"></i> Favorite
+                            </button>
+                        </div>
+                        <div class="relative" id="custom-select-container">
+                            <div id="custom-select-button" class="w-full bg-cpanInput rounded-xl py-3 pl-4 pr-4 text-white text-sm border border-gray-800 cursor-pointer flex justify-between items-center transition-colors shadow-inner">
+                                <span id="custom-select-text" class="truncate pr-4 text-gray-200">Select a service...</span>
+                                <div class="bg-gray-800 w-6 h-6 rounded-md flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-chevron-down text-gray-400 text-[0.6rem] transition-transform duration-300" id="custom-select-icon"></i>
+                                </div>
+                            </div>
+                            <div id="custom-select-dropdown" class="hidden absolute left-0 right-0 top-full mt-2 bg-[#141414] border border-gray-700 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.8)] z-50 max-h-64 overflow-y-auto custom-scrollbar">
+                                <ul id="custom-service-list" class="flex flex-col"></ul>
+                            </div>
+                            <input type="hidden" id="service" value="">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm text-gray-300 mb-2">Link</label>
+                        <input type="text" id="order-link-input" placeholder="https://" class="w-full bg-cpanInput rounded-xl py-3 px-4 text-white text-sm border border-gray-800 focus:outline-none focus:border-cpanAccent">
+                    </div>
+
+                    <div id="custom-comments-container" class="hidden">
+                        <label class="block text-sm text-gray-300 mb-2">Commentaires (1 par ligne)</label>
+                        <textarea id="custom-comments-input" rows="5" placeholder="Saisissez un commentaire par ligne..." class="w-full bg-cpanInput rounded-xl py-3 px-4 text-white text-sm border border-gray-800 focus:outline-none focus:border-cpanAccent resize-y custom-scrollbar"></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="flex flex-col">
+                            <label class="block text-sm text-gray-300 mb-2">Quantity</label>
+                            <input type="number" id="quantity" placeholder="Min: 100" class="w-full bg-cpanInput rounded-xl py-2.5 px-3 text-white text-sm border border-gray-800 focus:outline-none focus:border-cpanAccent flex-grow">
+                            <p id="limits" class="text-[0.6rem] text-gray-500 mt-1 pl-1 leading-tight tracking-tighter sm:tracking-normal"></p>
+                        </div>
+                        <div class="flex flex-col">
+                            <label class="block text-sm text-gray-300 mb-2">Charge</label>
+                            <div class="w-full bg-cpanInput rounded-xl px-3 text-white font-medium text-sm border border-gray-800 flex justify-between items-center flex-grow py-1.5">
+                                <span class="text-gray-500 mr-1">$</span>
+                                <div class="flex flex-col items-end justify-center min-w-0">
+                                    <span id="original-price" class="text-gray-600 line-through text-[0.65rem] hidden leading-none mb-0.5">0.00</span>
+                                    <span id="total-price" class="text-cpanAccentLight text-[0.95rem] font-bold leading-none truncate max-w-full">0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-cpanInput/30 border border-gray-800/80 rounded-xl p-3">
+                        <label class="flex items-center justify-between cursor-pointer group">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-droplet text-gray-500 group-hover:text-cpanAccentLight transition-colors" id="drip-icon"></i>
+                                <span class="text-sm text-gray-300 font-medium">Drip-feed Delivery</span>
+                            </div>
+                            <div class="relative">
+                                <input type="checkbox" id="drip-feed-toggle" class="sr-only">
+                                <div class="block bg-gray-800 w-10 h-6 rounded-full transition-colors border border-gray-700" id="drip-bg"></div>
+                                <div class="dot absolute left-1 top-1 bg-gray-400 w-4 h-4 rounded-full transition transform" id="drip-dot"></div>
+                            </div>
+                        </label>
+                        <div id="drip-feed-options" class="hidden mt-4 pt-3 border-t border-gray-800">
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-[0.7rem] text-gray-400 mb-1 uppercase tracking-wider font-bold">Runs</label>
+                                    <input type="number" id="drip-runs" value="2" min="2" class="w-full bg-cpanBg rounded-lg py-2 px-3 text-white text-sm border border-gray-800 focus:border-cpanAccent outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[0.7rem] text-gray-400 mb-1 uppercase tracking-wider font-bold">Interval (Min)</label>
+                                    <input type="number" id="drip-interval" value="60" min="10" class="w-full bg-cpanBg rounded-lg py-2 px-3 text-white text-sm border border-gray-800 focus:border-cpanAccent outline-none">
+                                </div>
+                            </div>
+                            <div class="mt-3 flex justify-between items-center bg-black/50 rounded-lg p-2 border border-gray-800/50">
+                                <span class="text-xs text-gray-400"><i class="fa-solid fa-calculator text-cpanAccentLight mr-1 opacity-70"></i> Total Quantity:</span>
+                                <span id="drip-total-qty" class="text-white font-bold text-sm">0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="order-msg-container" class="hidden text-xs font-medium py-2 px-3 rounded"></div>
+
+                    <button id="submit-order-btn" class="w-full bg-cpanAccent text-black font-bold py-3.5 rounded-xl mt-2 shadow-[0_0_15px_rgba(184,144,32,0.3)] transition-transform active:scale-95 flex items-center justify-center gap-2">
+                        <span>Submit Order</span>
+                        <i class="fa-solid fa-paper-plane text-sm opacity-80"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- VUE : SUBSCRIPTIONS -->
+            <div id="view-subscriptions" class="hidden space-y-4">
+                <div class="mb-2">
+                    <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-rotate text-cpanAccentLight"></i> Active Subscriptions</h3>
+                    <p class="text-xs text-gray-400 mt-1">Gérez vos envois automatiques récurrents sur vos profils.</p>
+                </div>
+                <div class="text-center text-sm text-gray-500 py-6">Aucune souscription active pour le moment.</div>
+            </div>
+
+            <!-- VUE : FAVOURITE -->
+            <div id="view-favourite" class="hidden space-y-4">
+                <div class="mb-2">
+                    <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-star text-yellow-500"></i> My Favourite Services</h3>
+                    <p class="text-xs text-gray-400 mt-1">Retrouvez ici vos services enregistrés en favoris pour y accéder rapidement.</p>
+                </div>
+                <div id="favourite-services-list" class="space-y-3"></div>
+            </div>
+
+            <!-- VUE : MASS ORDER -->
+            <div id="view-mass-order" class="hidden">
+                <div class="mb-4">
+                    <h3 class="text-white font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-layer-group text-cpanAccentLight"></i> Mass Order</h3>
+                    <p class="text-xs text-gray-400 mt-1 leading-relaxed">Place multiple orders at once by pasting them below. Format: <code class="bg-gray-800 px-1.5 py-0.5 rounded text-cpanAccentLight font-mono">service_id | link | quantity</code></p>
+                </div>
+                
+                <div class="bg-cpanInput/50 border border-gray-800 rounded-xl p-3 mb-4">
+                    <p class="text-xs text-gray-500 mb-2 font-bold uppercase tracking-wider">Example:</p>
+                    <p class="text-xs text-gray-400 font-mono leading-relaxed">
+                        102 | https://instagram.com/p/abc | 1000<br>
+                        401 | https://tiktok.com/@user/v/123 | 5000
+                    </p>
+                </div>
+
+                <div class="relative">
+                    <textarea id="mass-order-input" rows="8" placeholder="Paste your mass orders here..." class="w-full bg-cpanInput rounded-xl p-4 text-white text-sm border border-gray-800 focus:outline-none focus:border-cpanAccent font-mono leading-relaxed resize-none custom-scrollbar"></textarea>
+                    <div class="absolute right-3 bottom-3 text-xs text-gray-500"><span id="mass-lines-count">0</span> lines</div>
+                </div>
+
+                <div id="mass-msg-container" class="hidden text-xs font-medium py-2 px-3 rounded mt-4"></div>
+
+                <button id="submit-mass-btn" class="w-full bg-gray-800 hover:bg-cpanAccent text-white font-bold py-3.5 rounded-xl mt-4 transition-all flex items-center justify-center gap-2 group">
+                    <span>Submit Mass Order</span>
+                    <i class="fa-solid fa-bolt text-sm opacity-50 group-hover:opacity-100 group-hover:text-black"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALES / VUES SECONDAIRES -->
+    
+    <!-- 1. VUE TICKETS DE SUPPORT -->
+    <div id="tickets-view" class="hidden fixed inset-0 bg-cpanBg z-50 flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out">
+        <header class="flex items-center justify-between p-4 border-b border-gray-900 bg-cpanCard shrink-0 shadow-md">
+            <button id="close-tickets-btn" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white transition bg-cpanInput rounded-xl">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h2 class="text-lg font-bold text-white tracking-wide"><i class="fa-solid fa-headset text-cpanAccentLight mr-2"></i>Support Tickets</h2>
+            <div class="w-10 h-10"></div> 
+        </header>
+
+        <div class="flex-1 overflow-y-auto bg-cpanBg p-4 space-y-6">
+            <div class="bg-cpanCard border border-gray-800 rounded-2xl p-5 shadow-lg">
+                <h3 class="text-white font-bold mb-4 border-b border-gray-800 pb-2 text-sm uppercase tracking-wider">Open New Ticket</h3>
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1 font-medium">Subject</label>
+                        <select id="ticket-subject" class="w-full bg-cpanInput rounded-lg py-2.5 px-3 text-white text-sm border border-gray-800 focus:outline-none focus:border-cpanAccent">
+                            <option value="Refill">Order Refill (Drop)</option>
+                            <option value="Cancel">Order Cancellation</option>
+                            <option value="Speed">Speed Up Order</option>
+                            <option value="Payment">Payment / Add Funds</option>
+                            <option value="Other">Other Inquiry</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1 font-medium">Order ID (Optional)</label>
+                        <input type="text" id="ticket-order-id" placeholder="e.g. 1234567" class="w-full bg-cpanInput rounded-lg py-2.5 px-3 text-white text-sm border border-gray-800 focus:outline-none focus:border-cpanAccent">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1 font-medium">Message</label>
+                        <textarea id="ticket-message" rows="3" placeholder="Describe your issue..." class="w-full bg-cpanInput rounded-lg py-2.5 px-3 text-white text-sm border border-gray-800 focus:outline-none focus:border-cpanAccent resize-none"></textarea>
+                    </div>
+                    <div id="ticket-msg-container" class="hidden text-xs font-medium py-2 px-3 rounded"></div>
+                    <button id="submit-ticket-btn" class="w-full bg-cpanAccent text-black font-bold py-2.5 rounded-lg transition-transform active:scale-95 shadow-[0_0_10px_rgba(184,144,32,0.2)]">
+                        Submit Ticket
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-white font-bold mb-3 px-1 text-sm uppercase tracking-wider flex justify-between items-center">
+                    My Tickets
+                    <span class="bg-gray-800 text-xs px-2 py-0.5 rounded text-gray-400" id="ticket-count-display">0</span>
+                </h3>
+                <div id="tickets-list" class="space-y-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. VUE HISTORIQUE -->
+    <div id="history-view" class="hidden fixed inset-0 bg-cpanBg z-50 flex flex-col transform translate-x-full transition-transform duration-300 ease-in-out">
+        <header class="flex items-center justify-between p-4 border-b border-gray-900 bg-cpanCard shrink-0">
+            <button id="close-history-btn" class="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white transition bg-cpanInput rounded-xl">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <h2 class="text-lg font-bold text-white tracking-wide">Account History</h2>
+            <div class="w-10 h-10"></div> 
+        </header>
+        <div class="flex px-4 pt-4 shrink-0 gap-2 bg-cpanCard border-b border-gray-900">
+            <button id="tab-orders" class="flex-1 py-3 text-sm font-bold border-b-2 border-cpanAccent text-cpanAccentLight">
+                <i class="fa-solid fa-cart-shopping mr-1"></i> Orders (<span id="count-orders">0</span>)
+            </button>
+            <button id="tab-funds" class="flex-1 py-3 text-sm font-bold border-b-2 border-transparent text-gray-500 hover:text-gray-300 transition">
+                <i class="fa-solid fa-wallet mr-1"></i> Funds (<span id="count-funds">0</span>)
+            </button>
+        </div>
+        <div class="flex-1 overflow-y-auto bg-cpanBg p-4 custom-scrollbar" id="history-list-container">
+            <div id="history-items" class="space-y-3"></div>
+        </div>
+        <div id="history-pagination" class="shrink-0 bg-cpanCard border-t border-gray-900 p-4 flex justify-between items-center">
+            <button id="page-prev" class="w-10 h-10 rounded-xl bg-cpanInput text-gray-400 disabled:opacity-30 flex items-center justify-center"><i class="fa-solid fa-chevron-left"></i></button>
+            <span class="text-sm font-medium text-gray-400">Page <span id="current-page-display" class="text-white">1</span> of <span id="total-pages-display">1</span></span>
+            <button id="page-next" class="w-10 h-10 rounded-xl bg-cpanInput text-gray-400 disabled:opacity-30 flex items-center justify-center"><i class="fa-solid fa-chevron-right"></i></button>
+        </div>
+    </div>
+
+    <!-- 3. MODALE : ADD FUNDS -->
+    <div id="add-funds-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-cpanCard w-full max-w-sm rounded-3xl p-6 border border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.8)] relative transform transition-all scale-95 opacity-0" id="add-funds-content">
+            <button id="close-modal-btn" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-cpanInput"><i class="fa-solid fa-xmark"></i></button>
+            <h2 class="text-xl font-bold mb-6 text-white flex items-center gap-2"><i class="fa-solid fa-wallet text-cpanAccentLight"></i> Add Funds</h2>
+            <div class="bg-gradient-to-br from-gray-900 to-black p-4 rounded-2xl border border-gray-700 mb-6 relative overflow-hidden shadow-inner">
+                <div class="absolute top-3 right-3 bg-green-500/10 text-green-400 text-[0.65rem] uppercase font-bold tracking-wider px-2 py-1 rounded border border-green-500/20"><i class="fa-solid fa-shield-check"></i> Verified</div>
+                <div class="flex items-center gap-3 mb-2 pt-1">
+                    <div class="w-10 h-6 bg-gray-200 rounded flex items-center justify-center"><i class="fa-brands fa-cc-visa text-[#1A1F71] text-xl"></i></div>
+                    <span class="text-lg tracking-widest font-mono text-gray-200 font-semibold">•••• 3490</span>
+                </div>
+                <div class="flex items-center gap-2 text-xs text-gray-400 mt-4 border-t border-gray-800 pt-3"><i class="fa-brands fa-paypal text-[#0079C1] text-sm"></i><span class="truncate">abderrahim.agnuaou@gmail.com</span></div>
+            </div>
+            <div class="mb-6">
+                <label class="block text-sm text-gray-300 mb-2">Amount (USD)</label>
+                <div class="relative">
+                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                    <input type="number" id="fund-amount-input" placeholder="0.00" min="50" class="w-full bg-cpanInput rounded-xl py-3 pl-8 pr-4 text-white text-lg font-bold border border-gray-800 focus:outline-none focus:border-cpanAccent">
+                </div>
+                <p id="fund-error-msg" class="hidden text-xs text-red-500 mt-2 font-medium bg-red-900/20 py-1 px-2 rounded"><i class="fa-solid fa-circle-exclamation mr-1"></i> Minimum amount is $50.00</p>
+                <p class="text-[0.65rem] text-gray-500 mt-1 pl-1">Minimum amount: $50.00</p>
+            </div>
+            <button id="pay-securely-btn" class="w-full bg-cpanAccent text-black font-bold py-3.5 rounded-xl shadow-[0_0_15px_rgba(184,144,32,0.3)] transition-transform active:scale-95 flex items-center justify-center gap-2">Pay Securely <i class="fa-solid fa-lock text-sm"></i></button>
+        </div>
+    </div>
+
+    <!-- 4. MODALE : PROFILE -->
+    <div id="profile-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-cpanCard w-full max-w-sm rounded-3xl p-6 border border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.8)] relative transform transition-all scale-95 opacity-0" id="profile-content">
+            <button id="close-profile-btn" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-cpanInput"><i class="fa-solid fa-xmark"></i></button>
+            <div class="flex flex-col items-center mt-2">
+                <div class="w-24 h-24 rounded-full overflow-hidden bg-gray-800 border-[3px] border-cpanAccentLight mb-4 shadow-[0_0_20px_rgba(234,179,8,0.3)]"><img src="https://api.dicebear.com/7.x/avataaars/svg?seed=abderrahim&backgroundColor=333333&accessories=sunglasses" alt="Avatar" class="w-full h-full object-cover"></div>
+                <h2 class="text-2xl font-bold text-white mb-1 tracking-wide" id="profile-display-name">abderrahim agnuaou</h2>
+                <p class="text-sm text-gray-400 mb-6"><i class="fa-solid fa-envelope mr-1.5 text-gray-500"></i><span id="profile-display-email">abderrahim.agnuaou@gmail.com</span></p>
+                <div class="w-full bg-cpanInput rounded-2xl p-4 flex flex-col gap-4 border border-gray-800">
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400 text-sm font-medium">Account Status</span>
+                        <span class="bg-gray-700 text-white text-[0.7rem] font-black tracking-wide px-3 py-1 rounded-full"><i class="fa-solid fa-user text-white mr-1"></i> Débutant</span>
+                    </div>
+                    <div class="h-px w-full bg-gray-800"></div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-400 text-sm font-medium">Member Since</span>
+                        <span class="text-white font-bold text-sm bg-gray-800 px-3 py-1 rounded-lg border border-gray-700">2026</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 5. MODALE : SETTINGS -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-cpanCard w-full max-w-sm rounded-3xl p-6 border border-gray-800 shadow-[0_0_40px_rgba(0,0,0,0.8)] relative transform transition-all scale-95 opacity-0" id="settings-content">
+            <button id="close-settings-btn" class="absolute top-4 right-4 text-gray-500 hover:text-white transition-colors w-8 h-8 flex items-center justify-center rounded-full bg-cpanInput"><i class="fa-solid fa-xmark"></i></button>
+            <h2 class="text-xl font-bold mb-6 text-white flex items-center gap-2"><i class="fa-solid fa-gear text-cpanAccentLight"></i> Account Settings</h2>
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Nom d'utilisateur</label>
+                    <input type="text" id="settings-name-input" value="abderrahim agnuaou" class="w-full bg-cpanInput rounded-xl py-2.5 px-3 text-white text-sm border border-gray-800 focus:border-cpanAccent outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Email du compte</label>
+                    <input type="email" id="settings-email-input" value="abderrahim.agnuaou@gmail.com" class="w-full bg-cpanInput rounded-xl py-2.5 px-3 text-white text-sm border border-gray-800 focus:border-cpanAccent outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs text-gray-400 mb-1">Nouveau mot de passe</label>
+                    <input type="password" placeholder="Laisser vide si inchangé" class="w-full bg-cpanInput rounded-xl py-2.5 px-3 text-white text-sm border border-gray-800 focus:border-cpanAccent outline-none">
+                </div>
+                <button id="save-settings-btn" class="w-full bg-cpanAccent text-black font-bold py-3 rounded-xl mt-2 transition-transform active:scale-95 shadow-lg">
+                    Sauvegarder les modifications
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIQUE JAVASCRIPT GLOBALE -->
+    <script>
+        let actualBalanceNum = 0.00; 
+        let globalSpentNum = 0.00;
+        let generatedOrders = [];
+        let generatedFunds = [];
+        let generatedTickets = []; 
+        let favouriteServiceIds = new Set(); 
+
+        function updateTicketCounter() {
+            document.getElementById('global-tickets-count').textContent = generatedTickets.length;
+            if(document.getElementById('ticket-count-display')) document.getElementById('ticket-count-display').textContent = generatedTickets.length;
+        }
+
+        const servicesData = {
+            facebook: [
+                { id: 101, name: 'Facebook Vues', rate: 0.13, min: 1000, max: 1000000 },
+                { id: 102, name: 'Facebook Likes', rate: 1.5, min: 100, max: 50000 },
+                { id: 103, name: 'Facebook Followers + Likes', rate: 3.4, min: 100, max: 50000 },
+                { id: 104, name: 'Facebook Commentaires', rate: 60.0, min: 10, max: 5000 },
+                { id: 105, name: 'Facebook Spectateurs Live', rate: 15.0, min: 50, max: 5000 },
+                { id: 106, name: 'Facebook Followers + Likes Arabes Account with VPN', rate: 2.9, min: 100, max: 50000 },
+                { id: 107, name: 'Facebook Commentaires Custom Arabe', rate: 8.5, min: 100, max: 5000 },
+                { id: 108, name: 'Facebook Share', rate: 4.2, min: 100, max: 50000 },
+                { id: 109, name: 'Facebook Likes Mix Arabe', rate: 4.2, min: 100, max: 50000 }
+            ],
+            youtube: [
+                { id: 201, name: 'YouTube Vues', rate: 3.6, min: 1000, max: 5000000 },
+                { id: 202, name: 'YouTube Likes', rate: 5.5, min: 100, max: 100000 },
+                { id: 203, name: 'YouTube Abonnés', rate: 25.0, min: 50, max: 5000 },
+                { id: 204, name: 'YouTube Watchtime', rate: 18.0, min: 100, max: 4000 },
+                { id: 205, name: 'YouTube Shorts', rate: 1.2, min: 500, max: 1000000 },
+                { id: 206, name: 'YouTube Commentaires Custom Arabe', rate: 67.3, min: 100, max: 5000 }
+            ],
+            instagram: [
+                { id: 301, name: 'Instagram Vues', rate: 0.08, min: 500, max: 10000000 },
+                { id: 302, name: 'Instagram Likes', rate: 0.7, min: 100, max: 50000 },
+                { id: 303, name: 'Instagram Followers', rate: 4.1, min: 100, max: 100000 },
+                { id: 304, name: 'Instagram Commentaires', rate: 6.4, min: 10, max: 5000 }
+            ],
+            tiktok: [
+                { id: 401, name: 'TikTok Followers', rate: 4.3, min: 100, max: 50000 },
+                { id: 402, name: 'TikTok Likes', rate: 0.6, min: 100, max: 50000 },
+                { id: 403, name: 'TikTok Vues', rate: 0.8, min: 500, max: 10000000 },
+                { id: 404, name: 'TikTok Vues + Save + Share', rate: 1.4, min: 100, max: 5000000 },
+                { id: 405, name: 'TikTok Commentaires Custom Arabe', rate: 65.0, min: 10, max: 5000 }
+            ]
+        };
+
+        servicesData.all = [];
+        for (const [platform, services] of Object.entries(servicesData)) {
+            if (platform !== 'all') servicesData.all = servicesData.all.concat(services);
+        }
+        const serviceMap = new Map();
+        servicesData.all.forEach(s => serviceMap.set(s.id.toString(), s));
+
+        // --- GESTION DU LOCAL STORAGE POUR LA PERSISTANCE ---
+        function sauvegarderDonnees() {
+            try {
+                localStorage.setItem('cpan_orders_v2', JSON.stringify(generatedOrders));
+                localStorage.setItem('cpan_funds_v2', JSON.stringify(generatedFunds));
+                localStorage.setItem('cpan_tickets_v2', JSON.stringify(generatedTickets));
+                localStorage.setItem('cpan_balance_v2', actualBalanceNum.toString());
+                localStorage.setItem('cpan_spent_v2', globalSpentNum.toString());
+            } catch (e) {
+                alert("Erreur Android : Le stockage est bloqué sur ton téléphone (" + e.message + ")");
+            }
+        }
+
+        // --- CHARGEMENT DES DONNÉES ---
+        function chargerDonnees() {
+            try {
+                const savedOrders = localStorage.getItem('cpan_orders_v2');
+                const savedFunds = localStorage.getItem('cpan_funds_v2');
+                const savedTickets = localStorage.getItem('cpan_tickets_v2');
+                const savedBalance = localStorage.getItem('cpan_balance_v2');
+                const savedSpent = localStorage.getItem('cpan_spent_v2');
+
+                if (savedOrders) generatedOrders = JSON.parse(savedOrders).map(o => ({...o, date: new Date(o.date)}));
+                if (savedFunds) generatedFunds = JSON.parse(savedFunds).map(f => ({...f, date: new Date(f.date)}));
+                if (savedTickets) generatedTickets = JSON.parse(savedTickets).map(t => ({...t, date: new Date(t.date)}));
+
+                if (savedBalance !== null && savedBalance !== "") actualBalanceNum = parseFloat(savedBalance);
+                if (savedSpent !== null && savedSpent !== "") globalSpentNum = parseFloat(savedSpent);
+
+            } catch (e) {
+                console.error("Erreur de lecture du LocalStorage :", e);
+            }
+
+            // Mise à jour de l'interface
+            document.getElementById('global-orders-count').textContent = generatedOrders.length.toLocaleString();
+            document.getElementById('global-spent-count').textContent = "$" + globalSpentNum.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 2});
+            if(document.getElementById('count-orders')) document.getElementById('count-orders').textContent = generatedOrders.length.toLocaleString();
+            if(document.getElementById('count-funds')) document.getElementById('count-funds').textContent = generatedFunds.length.toLocaleString();
+            
+            updateBalanceUI();
+            updateTicketCounter();
+        }
+
+        const tabNavNew = document.getElementById('tab-nav-new');
+        const tabNavSubs = document.getElementById('tab-nav-subs');
+        const tabNavFav = document.getElementById('tab-nav-fav');
+        const tabNavMass = document.getElementById('tab-nav-mass');
+        const viewNewOrder = document.getElementById('view-new-order');
+        const viewSubs = document.getElementById('view-subscriptions');
+        const viewFav = document.getElementById('view-favourite');
+        const viewMassOrder = document.getElementById('view-mass-order');
+        const allTabs = [tabNavNew, tabNavSubs, tabNavFav, tabNavMass];
+        const allViews = [viewNewOrder, viewSubs, viewFav, viewMassOrder];
+
+        function switchTab(activeTab, activeView) {
+            allViews.forEach(v => v.classList.add('hidden'));
+            activeView.classList.remove('hidden');
+            allTabs.forEach(t => t.className = "flex-1 bg-transparent text-gray-400 py-3 rounded-t-2xl font-semibold flex items-center justify-center gap-2 transition-all border-b border-gray-800 text-xs sm:text-sm");
+            activeTab.className = "flex-1 bg-[#1a1705] text-cpanAccentLight border-t border-l border-r border-yellow-900/40 py-3 rounded-t-2xl font-semibold flex items-center justify-center gap-2 shadow-lg transition-all text-xs sm:text-sm";
+            if(activeTab === tabNavFav) renderFavouriteServices();
+        }
+
+        tabNavNew.addEventListener('click', () => switchTab(tabNavNew, viewNewOrder));
+        tabNavSubs.addEventListener('click', () => switchTab(tabNavSubs, viewSubs));
+        tabNavFav.addEventListener('click', () => switchTab(tabNavFav, viewFav));
+        tabNavMass.addEventListener('click', () => switchTab(tabNavMass, viewMassOrder));
+
+        const menuBtn = document.getElementById('menu-btn');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        menuBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdownMenu.classList.toggle('hidden'); });
+
+        const themeToggleBtn = document.getElementById('theme-toggle-btn');
+        const themeIcon = document.getElementById('theme-icon');
+        let isDarkMode = true;
+        themeToggleBtn.addEventListener('click', () => {
+            isDarkMode = !isDarkMode;
+            if(isDarkMode) {
+                document.getElementById('body-theme').className = "bg-cpanBg text-white font-sans antialiased min-h-screen relative overflow-x-hidden";
+                themeIcon.className = "fa-solid fa-moon";
+            } else {
+                document.getElementById('body-theme').className = "bg-gray-100 text-gray-900 font-sans antialiased min-h-screen relative overflow-x-hidden";
+                themeIcon.className = "fa-solid fa-sun text-yellow-500";
+            }
+        });
+
+        const logoutBtn = document.getElementById('logout-btn');
+        const loginScreen = document.getElementById('login-screen');
+        logoutBtn.addEventListener('click', (e) => { e.preventDefault(); dropdownMenu.classList.add('hidden'); loginScreen.classList.remove('hidden'); });
+        document.getElementById('login-submit-btn').addEventListener('click', () => { loginScreen.classList.add('hidden'); });
+
+        const openSettingsBtn = document.getElementById('open-settings-btn');
+        const settingsModal = document.getElementById('settings-modal');
+        const settingsContent = document.getElementById('settings-content');
+        openSettingsBtn.addEventListener('click', (e) => { e.preventDefault(); dropdownMenu.classList.add('hidden'); settingsModal.classList.remove('hidden'); setTimeout(() => { settingsContent.classList.remove('scale-95', 'opacity-0'); settingsContent.classList.add('scale-100', 'opacity-100'); }, 10); });
+        document.getElementById('close-settings-btn').addEventListener('click', closeSettingsModal);
+        
+        function closeSettingsModal() {
+            settingsContent.classList.remove('scale-100', 'opacity-100'); settingsContent.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => { settingsModal.classList.add('hidden'); }, 200);
+        }
+
+        document.getElementById('save-settings-btn').addEventListener('click', () => {
+            const newName = document.getElementById('settings-name-input').value;
+            const newEmail = document.getElementById('settings-email-input').value;
+            document.getElementById('profile-display-name').textContent = newName;
+            document.getElementById('profile-display-email').textContent = newEmail;
+            closeSettingsModal();
+        });
+
+        const balanceAmount = document.getElementById('balance-amount');
+        const toggleBalanceBtn = document.getElementById('toggle-balance');
+        const eyeIcon = document.getElementById('eye-icon');
+        let isBalanceHidden = false;
+        function updateBalanceUI() {
+            if (isBalanceHidden) {
+                balanceAmount.textContent = "••••••••";
+                eyeIcon.classList.replace('fa-eye', 'fa-eye-slash');
+            } else {
+                balanceAmount.textContent = "$" + actualBalanceNum.toFixed(7);
+                eyeIcon.classList.replace('fa-eye-slash', 'fa-eye');
+            }
+        }
+        toggleBalanceBtn.addEventListener('click', () => { isBalanceHidden = !isBalanceHidden; updateBalanceUI(); });
+
+        const dripFeedToggle = document.getElementById('drip-feed-toggle');
+        const dripBg = document.getElementById('drip-bg');
+        const dripDot = document.getElementById('drip-dot');
+        const dripOptions = document.getElementById('drip-feed-options');
+        const dripRuns = document.getElementById('drip-runs');
+        const dripTotalQty = document.getElementById('drip-total-qty');
+        const dripIcon = document.getElementById('drip-icon');
+        let isDripFeed = false;
+
+        dripFeedToggle.addEventListener('change', (e) => {
+            isDripFeed = e.target.checked;
+            if (isDripFeed) {
+                dripBg.classList.replace('bg-gray-800', 'bg-cpanAccent'); dripDot.classList.add('translate-x-4'); dripDot.classList.replace('bg-gray-400', 'bg-white'); dripOptions.classList.remove('hidden'); dripIcon.classList.replace('text-gray-500', 'text-cpanAccentLight');
+            } else {
+                dripBg.classList.replace('bg-cpanAccent', 'bg-gray-800'); dripDot.classList.remove('translate-x-4'); dripDot.classList.replace('bg-white', 'bg-gray-400'); dripOptions.classList.add('hidden'); dripIcon.classList.replace('text-cpanAccentLight', 'text-gray-500');
+            }
+            updateCalculations();
+        });
+
+        const platformBtns = document.querySelectorAll('.platform-btn');
+        const serviceHiddenInput = document.getElementById('service');
+        const customSelectBtn = document.getElementById('custom-select-button');
+        const customSelectDropdown = document.getElementById('custom-select-dropdown');
+        const customSelectText = document.getElementById('custom-select-text');
+        const customSelectIcon = document.getElementById('custom-select-icon');
+        const customServiceList = document.getElementById('custom-service-list');
+        const toggleFavServiceBtn = document.getElementById('toggle-fav-service-btn');
+        const favIconIndicator = document.getElementById('fav-icon-indicator');
+        const quantityInput = document.getElementById('quantity');
+        const priceDisplay = document.getElementById('total-price');
+        const originalPriceDisplay = document.getElementById('original-price');
+        const limitsDisplay = document.getElementById('limits');
+        const orderLinkInput = document.getElementById('order-link-input');
+        const orderMsgContainer = document.getElementById('order-msg-container');
+        let currentPlatform = 'all';
+
+        customSelectBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); customSelectDropdown.classList.toggle('hidden'); customSelectBtn.classList.toggle('border-cpanAccent'); customSelectIcon.classList.toggle('rotate-180');
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!customSelectBtn.contains(e.target) && !customSelectDropdown.contains(e.target)) {
+                customSelectDropdown.classList.add('hidden'); customSelectBtn.classList.remove('border-cpanAccent'); customSelectIcon.classList.remove('rotate-180');
+            }
+            if (!dropdownMenu.contains(e.target) && !menuBtn.contains(e.target)) dropdownMenu.classList.add('hidden');
+        });
+
+        platformBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                platformBtns.forEach(b => {
+                    b.classList.remove('ring-2', 'ring-cpanAccent', 'ring-offset-2', 'ring-offset-cpanCard', 'opacity-100'); b.classList.add('opacity-60');
+                    if(b.dataset.platform === 'all') { b.classList.replace('bg-cpanAccent', 'bg-[#111111]'); b.classList.replace('text-black', 'text-white'); }
+                });
+                btn.classList.remove('opacity-60'); btn.classList.add('ring-2', 'ring-cpanAccent', 'ring-offset-2', 'ring-offset-cpanCard', 'opacity-100');
+                if(btn.dataset.platform === 'all') { btn.classList.replace('bg-[#111111]', 'bg-cpanAccent'); btn.classList.replace('text-white', 'text-black'); }
+                currentPlatform = btn.dataset.platform;
+                updateServices();
+            });
+        });
+
+        function updateServices() {
+            customServiceList.innerHTML = '';
+            const listToDisplay = currentPlatform === 'all' ? servicesData.all : (servicesData[currentPlatform] || []);
+            listToDisplay.forEach((service) => {
+                const unitText = service.unit === 1 ? 'Unité' : '1000';
+                const baseRate = service.rate.toFixed(2);
+                const isFav = favouriteServiceIds.has(service.id);
+                const li = document.createElement('li');
+                li.className = "px-4 py-3 border-b border-gray-800 hover:bg-[#252525] cursor-pointer transition-colors flex justify-between items-center";
+                li.innerHTML = `
+                    <div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-[0.65rem] bg-black text-gray-400 border border-gray-700 px-1.5 py-0.5 rounded font-mono">ID: ${service.id}</span>
+                            <span class="text-xs font-bold text-cpanAccentLight">$${baseRate} <span class="text-[0.6rem] text-gray-500 font-normal">/ ${unitText}</span></span>
+                        </div>
+                        <div class="text-sm text-gray-200 font-medium leading-tight">${service.name}</div>
+                    </div>
+                    <button class="fav-star-btn p-2 text-gray-500 hover:text-yellow-400 transition" data-id="${service.id}">
+                        <i class="${isFav ? 'fa-solid text-yellow-400' : 'fa-regular'} fa-star"></i>
+                    </button>
+                `;
+                li.querySelector('.fav-star-btn').addEventListener('click', (ev) => { ev.stopPropagation(); toggleFavourite(service.id); updateServices(); });
+                li.addEventListener('click', () => { selectService(service); customSelectDropdown.classList.add('hidden'); customSelectBtn.classList.remove('border-cpanAccent'); customSelectIcon.classList.remove('rotate-180'); });
+                customServiceList.appendChild(li);
+            });
+            if(listToDisplay.length > 0) selectService(listToDisplay[0]); else { serviceHiddenInput.value = ""; customSelectText.textContent = "No services available"; }
+        }
+
+        function selectService(service) {
+            serviceHiddenInput.value = service.id;
+            customSelectText.innerHTML = `<span class="font-mono text-gray-500 mr-1.5">[${service.id}]</span> <span class="text-white">${service.name}</span>`;
+            if(favouriteServiceIds.has(service.id)) favIconIndicator.className = "fa-solid text-yellow-400"; else favIconIndicator.className = "fa-regular fa-star";
+            updateCalculations();
+        }
+
+        toggleFavServiceBtn.addEventListener('click', () => { const currentId = parseInt(serviceHiddenInput.value); if(!isNaN(currentId)) { toggleFavourite(currentId); updateServices(); } });
+        function toggleFavourite(id) { if(favouriteServiceIds.has(id)) favouriteServiceIds.delete(id); else favouriteServiceIds.add(id); }
+
+        function renderFavouriteServices() {
+            const container = document.getElementById('favourite-services-list'); container.innerHTML = '';
+            const favs = servicesData.all.filter(s => favouriteServiceIds.has(s.id));
+            if(favs.length === 0) return container.innerHTML = '<div class="text-center text-sm text-gray-500 py-6">Aucun service en favori pour le moment.</div>';
+            favs.forEach(service => {
+                const div = document.createElement('div');
+                div.className = "bg-cpanCard border border-gray-800 rounded-2xl p-4 flex justify-between items-center";
+                div.innerHTML = `<div><span class="text-[0.65rem] bg-black text-gray-400 border border-gray-700 px-1.5 py-0.5 rounded font-mono">ID: ${service.id}</span><h4 class="text-sm font-semibold text-white mt-1">${service.name}</h4><span class="text-xs text-cpanAccentLight font-bold">$${service.rate.toFixed(2)} / 1000</span></div><button class="bg-cpanInput hover:bg-cpanAccent hover:text-black text-white text-xs font-bold py-2 px-3 rounded-xl transition select-fav-direct" data-id="${service.id}">Commander</button>`;
+                div.querySelector('.select-fav-direct').addEventListener('click', () => { switchTab(tabNavNew, viewNewOrder); selectService(service); });
+                container.appendChild(div);
+            });
+        }
+
+        function updateCalculations() {
+            const serviceId = serviceHiddenInput.value; if (!serviceId) return;
+            const selectedService = serviceMap.get(serviceId); if(!selectedService) return;
+            quantityInput.min = selectedService.min; quantityInput.max = selectedService.max; limitsDisplay.textContent = `Min: ${selectedService.min} - Max: ${selectedService.max}`;
+            const baseQty = parseInt(quantityInput.value) || 0;
+            const runs = isDripFeed ? (parseInt(dripRuns.value) || 1) : 1;
+            const totalQty = baseQty * runs;
+            dripTotalQty.textContent = totalQty.toLocaleString();
+            
+            let finalPrice = 0;
+            if (baseQty > 0) {
+                const unitDivider = selectedService.unit || 1000;
+                finalPrice = (totalQty / unitDivider) * selectedService.rate;
+                originalPriceDisplay.classList.add('hidden');
+            } else { originalPriceDisplay.classList.add('hidden'); }
+            
+            priceDisplay.textContent = finalPrice.toFixed(4); orderMsgContainer.classList.add('hidden');
+            
+            const commentsContainer = document.getElementById('custom-comments-container');
+            if (commentsContainer) {
+                if (selectedService.name.toLowerCase().includes('custom')) {
+                    commentsContainer.classList.remove('hidden');
+                } else {
+                    commentsContainer.classList.add('hidden');
+                }
+            }
+        }
+        
+        quantityInput.addEventListener('input', updateCalculations);
+        dripRuns.addEventListener('input', updateCalculations);
+        
+        const customCommentsInput = document.getElementById('custom-comments-input');
+        if(customCommentsInput) {
+            customCommentsInput.addEventListener('input', (e) => {
+                const lines = e.target.value.split('\n').filter(l => l.trim() !== '');
+                if(lines.length > 0) {
+                    quantityInput.value = lines.length;
+                    updateCalculations();
+                }
+            });
+        }
+        
+        updateServices();
+
+        function showMsg(container, text, isError) {
+            container.innerHTML = text; container.className = `text-xs font-medium py-2 px-3 rounded mt-2 ${isError ? 'text-red-500 bg-red-900/20 border border-red-900' : 'text-green-500 bg-green-900/20 border border-green-900'}`;
+            container.classList.remove('hidden'); setTimeout(() => { container.classList.add('hidden'); }, 5000);
+        }
+
+        // CHARGEMENT AU DEMARRAGE
+        chargerDonnees();
+
+        // --- SUBMIT NEW ORDER ---
+        document.getElementById('submit-order-btn').addEventListener('click', () => {
+            const baseQty = parseInt(quantityInput.value) || 0;
+            const link = orderLinkInput.value.trim();
+            const selectedService = serviceMap.get(serviceHiddenInput.value);
+            
+            if (!selectedService) return showMsg(orderMsgContainer, 'Select a service.', true);
+            if (baseQty < selectedService.min || baseQty > selectedService.max) return showMsg(orderMsgContainer, 'Invalid quantity.', true);
+            if (!link) return showMsg(orderMsgContainer, 'Provide a link.', true);
+
+            const totalPrice = parseFloat(priceDisplay.textContent);
+            if (totalPrice > actualBalanceNum) return showMsg(orderMsgContainer, 'Insufficient balance!', true);
+
+            actualBalanceNum -= totalPrice; updateBalanceUI();
+            globalSpentNum += totalPrice; document.getElementById('global-spent-count').textContent = "$" + globalSpentNum.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 2});
+
+            const totalQty = isDripFeed ? baseQty * (parseInt(dripRuns.value) || 1) : baseQty;
+            const serviceName = isDripFeed ? `${selectedService.name} (Drip)` : selectedService.name;
+
+            generatedOrders.unshift({ id: Math.floor(Math.random() * 8999999 + 1000000), date: new Date(), service: serviceName, link: link, qty: totalQty, price: totalPrice.toFixed(3), status: 'Processing' });
+            
+            sauvegarderDonnees();
+
+            document.getElementById('global-orders-count').textContent = generatedOrders.length.toLocaleString();
+            if(document.getElementById('count-orders')) document.getElementById('count-orders').textContent = generatedOrders.length.toLocaleString();
+            showMsg(orderMsgContainer, 'Order placed successfully!', false);
+            orderLinkInput.value = ''; quantityInput.value = ''; updateCalculations();
+        });
+
+        // --- MASS ORDER ---
+        const massOrderInput = document.getElementById('mass-order-input');
+        const massLinesCount = document.getElementById('mass-lines-count');
+        const massMsgContainer = document.getElementById('mass-msg-container');
+        
+        massOrderInput.addEventListener('input', () => {
+            const lines = massOrderInput.value.split('\n').filter(l => l.trim() !== '');
+            massLinesCount.textContent = lines.length;
+        });
+
+        document.getElementById('submit-mass-btn').addEventListener('click', () => {
+            const lines = massOrderInput.value.split('\n').filter(l => l.trim() !== '');
+            if(lines.length === 0) return showMsg(massMsgContainer, 'Input is empty.', true);
+
+            let totalCost = 0; let validOrders = [];
+            for(let i=0; i<lines.length; i++) {
+                const parts = lines[i].split('|').map(p => p.trim());
+                if(parts.length !== 3) return showMsg(massMsgContainer, `Line ${i+1} format error.`, true);
+                const service = serviceMap.get(parts[0]); const qty = parseInt(parts[2]);
+                if(!service) return showMsg(massMsgContainer, `Line ${i+1}: Unknown ID.`, true);
+                if(isNaN(qty) || qty < service.min || qty > service.max) return showMsg(massMsgContainer, `Line ${i+1}: Qty error.`, true);
+                
+                const price = (qty / (service.unit || 1000)) * service.rate;
+                totalCost += price;
+                validOrders.push({ service: service, link: parts[1], qty: qty, price: price });
+            }
+
+            if (totalCost > actualBalanceNum) return showMsg(massMsgContainer, 'Insufficient balance for mass order!', true);
+
+            actualBalanceNum -= totalCost; updateBalanceUI();
+            globalSpentNum += totalCost; document.getElementById('global-spent-count').textContent = "$" + globalSpentNum.toLocaleString(undefined, {minimumFractionDigits: 1, maximumFractionDigits: 2});
+
+            validOrders.forEach(o => {
+                generatedOrders.unshift({ id: Math.floor(Math.random() * 8999999 + 1000000), date: new Date(), service: o.service.name, link: o.link, qty: o.qty, price: o.price.toFixed(3), status: 'Processing' });
+            });
+            
+            sauvegarderDonnees(); 
+
+            document.getElementById('global-orders-count').textContent = generatedOrders.length.toLocaleString();
+            if(document.getElementById('count-orders')) document.getElementById('count-orders').textContent = generatedOrders.length.toLocaleString();
+            showMsg(massMsgContainer, `${validOrders.length} Mass Orders placed!`, false);
+            massOrderInput.value = ''; massLinesCount.textContent = '0';
+        });
+
+        // --- ADD FUNDS ---
+        const openAddFundsBtn = document.getElementById('open-add-funds');
+        const addFundsModal = document.getElementById('add-funds-modal');
+        const addFundsContent = document.getElementById('add-funds-content');
+        openAddFundsBtn.addEventListener('click', (e) => { e.preventDefault(); dropdownMenu.classList.add('hidden'); document.getElementById('fund-amount-input').value = ''; document.getElementById('fund-error-msg').classList.add('hidden'); addFundsModal.classList.remove('hidden'); setTimeout(() => { addFundsContent.classList.remove('scale-95', 'opacity-0'); addFundsContent.classList.add('scale-100', 'opacity-100'); }, 10); });
+        document.getElementById('close-modal-btn').addEventListener('click', () => { addFundsContent.classList.remove('scale-100', 'opacity-100'); addFundsContent.classList.add('scale-95', 'opacity-0'); setTimeout(() => { addFundsModal.classList.add('hidden'); }, 200); });
+        
+        document.getElementById('pay-securely-btn').addEventListener('click', () => {
+            const amountToFund = parseFloat(document.getElementById('fund-amount-input').value);
+            if (isNaN(amountToFund) || amountToFund < 50) { document.getElementById('fund-error-msg').classList.remove('hidden'); } else {
+                actualBalanceNum += amountToFund; updateBalanceUI();
+                generatedFunds.unshift({ id: 'TX-' + Math.floor(Math.random() * 90000 + 10000), date: new Date(), amount: amountToFund, method: 'Visa •••• 3490', status: 'Completed' });
+                
+                sauvegarderDonnees(); 
+                
+                if(document.getElementById('count-funds')) document.getElementById('count-funds').textContent = generatedFunds.length.toLocaleString();
+                addFundsModal.classList.add('hidden');
+            }
+        });
+
+        const profileBtn = document.getElementById('profile-btn');
+        const profileModal = document.getElementById('profile-modal');
+        const profileContent = document.getElementById('profile-content');
+        profileBtn.addEventListener('click', (e) => { e.stopPropagation(); profileModal.classList.remove('hidden'); setTimeout(() => { profileContent.classList.remove('scale-95', 'opacity-0'); profileContent.classList.add('scale-100', 'opacity-100'); }, 10); });
+        document.getElementById('close-profile-btn').addEventListener('click', () => { profileContent.classList.remove('scale-100', 'opacity-100'); profileContent.classList.add('scale-95', 'opacity-0'); setTimeout(() => { profileModal.classList.add('hidden'); }, 200); });
+
+        // TICKETS
+        const openTicketsBtn = document.getElementById('open-tickets-btn');
+        const ticketsView = document.getElementById('tickets-view');
+        openTicketsBtn.addEventListener('click', (e) => { e.preventDefault(); dropdownMenu.classList.add('hidden'); ticketsView.classList.remove('hidden'); setTimeout(() => { ticketsView.classList.remove('translate-x-full'); }, 10); renderTickets(); });
+        document.getElementById('close-tickets-btn').addEventListener('click', () => { ticketsView.classList.add('translate-x-full'); setTimeout(() => { ticketsView.classList.add('hidden'); }, 300); });
+        
+        function renderTickets() {
+            updateTicketCounter();
+            const ticketsList = document.getElementById('tickets-list'); ticketsList.innerHTML = '';
+            if(generatedTickets.length === 0) return ticketsList.innerHTML = '<div class="text-center text-sm text-gray-500 py-4">No tickets found.</div>';
+            generatedTickets.forEach(ticket => {
+                let statusBadge = ticket.status === 'Pending' ? 'text-orange-400 bg-orange-500/10 border-orange-500/20' : (ticket.status === 'Answered' ? 'text-green-400 bg-green-500/10 border-green-500/20' : 'text-gray-400 bg-gray-500/10 border-gray-500/20');
+                const div = document.createElement('div'); div.className = "bg-cpanCard border border-gray-800 rounded-xl p-4";
+                div.innerHTML = `<div class="flex justify-between items-start mb-2"><span class="text-xs text-cpanAccentLight font-bold">Ticket #${ticket.id}</span><span class="text-[0.65rem] uppercase font-bold tracking-wider px-2 py-0.5 rounded border ${statusBadge}">${ticket.status}</span></div><div class="text-sm font-semibold text-white">${ticket.subject}</div><div class="text-xs text-gray-500 mt-2">${ticket.date.toLocaleDateString()}</div>`;
+                ticketsList.appendChild(div);
+            });
+        }
+        document.getElementById('submit-ticket-btn').addEventListener('click', () => {
+            const subject = document.getElementById('ticket-subject').value, msg = document.getElementById('ticket-message').value.trim();
+            if(!msg) return showMsg(document.getElementById('ticket-msg-container'), 'Message empty.', true);
+            generatedTickets.unshift({ id: Math.floor(Math.random() * 90000 + 10000), subject: subject, status: 'Pending', date: new Date() });
+            
+            sauvegarderDonnees(); 
+            
+            document.getElementById('ticket-message').value = ''; renderTickets(); showMsg(document.getElementById('ticket-msg-container'), 'Ticket created!', false);
+        });
+
+        // HISTORIQUE
+        const openHistoryBtn = document.getElementById('open-history-btn');
+        const historyView = document.getElementById('history-view');
+        openHistoryBtn.addEventListener('click', (e) => { e.preventDefault(); dropdownMenu.classList.add('hidden'); historyView.classList.remove('hidden'); setTimeout(() => { historyView.classList.remove('translate-x-full'); }, 10); renderHistoryList(); });
+        document.getElementById('close-history-btn').addEventListener('click', () => { historyView.classList.add('translate-x-full'); setTimeout(() => { historyView.classList.add('hidden'); }, 300); });
+        
+        let activeHistTab = 'orders', histCurrentPage = 1;
+        const HIST_ITEMS_PER_PAGE = 30;
+        document.getElementById('tab-orders').addEventListener('click', (e) => { activeHistTab = 'orders'; histCurrentPage = 1; renderHistoryList(); });
+        document.getElementById('tab-funds').addEventListener('click', (e) => { activeHistTab = 'funds'; histCurrentPage = 1; renderHistoryList(); });
+
+        function renderHistoryList() {
+            const container = document.getElementById('history-items'); container.innerHTML = '';
+            const dataArray = activeHistTab === 'orders' ? generatedOrders : generatedFunds;
+            
+            if (dataArray.length === 0) {
+                container.innerHTML = `<div class="text-center text-sm text-gray-500 py-6">Aucun historique pour le moment.</div>`;
+                document.getElementById('current-page-display').textContent = 1; 
+                document.getElementById('total-pages-display').textContent = 1;
+                return;
+            }
+
+            const totalPages = Math.ceil(dataArray.length / HIST_ITEMS_PER_PAGE);
+            const pageData = dataArray.slice((histCurrentPage - 1) * HIST_ITEMS_PER_PAGE, histCurrentPage * HIST_ITEMS_PER_PAGE);
+
+            pageData.forEach(item => {
+                const div = document.createElement('div'); div.className = "bg-cpanCard border border-gray-800 rounded-xl p-4 flex flex-col gap-2";
+                if (activeHistTab === 'orders') {
+                    const linkHtml = item.link ? `<div class="text-[0.65rem] text-gray-400 truncate w-full mt-0.5"><i class="fa-solid fa-link text-gray-600 mr-1"></i>${item.link}</div>` : '';
+                    div.innerHTML = `<div class="flex justify-between items-start"><span class="text-xs text-gray-500 font-mono">#${item.id}</span><span class="text-[0.65rem] uppercase font-bold tracking-wider px-2 py-0.5 rounded border text-blue-400 bg-blue-500/10 border-blue-500/20">${item.status}</span></div><div class="text-sm font-semibold text-gray-200">${item.service}</div>${linkHtml}<div class="flex justify-between items-end mt-1 pt-2 border-t border-gray-800/50"><span class="text-xs text-gray-500">Qty: ${item.qty}</span><span class="text-cpanAccentLight font-bold">$${item.price}</span></div>`;
+                } else {
+                    div.innerHTML = `<div class="flex justify-between items-start"><span class="text-xs text-gray-500 font-mono">${item.id}</span><span class="text-[0.65rem] text-green-400 bg-green-500/10 border border-green-500/20 uppercase font-bold tracking-wider px-2 py-0.5 rounded">Completed</span></div><div class="text-sm font-semibold text-gray-200 flex items-center gap-2 mt-1"><i class="fa-solid fa-building-columns text-gray-500"></i> ${item.method}</div><div class="flex justify-between items-end mt-1 pt-2 border-t border-gray-800/50"><span class="text-xs text-gray-500">Add funds</span><span class="text-green-500 font-bold text-lg">+$${item.amount.toFixed(2)}</span></div>`;
+                }
+                container.appendChild(div);
+            });
+            document.getElementById('current-page-display').textContent = histCurrentPage; document.getElementById('total-pages-display').textContent = totalPages || 1;
+        }
+        document.getElementById('page-prev').addEventListener('click', () => { if (histCurrentPage > 1) { histCurrentPage--; renderHistoryList(); } });
+        document.getElementById('page-next').addEventListener('click', () => { histCurrentPage++; renderHistoryList(); });
+
+        // --- GESTION DES ÉVÉNEMENTS DE FERMETURE ---
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') {
+                sauvegarderDonnees();
+            }
+        });
+        window.addEventListener('pagehide', sauvegarderDonnees);
+        window.addEventListener('beforeunload', sauvegarderDonnees);
+    </script>
+</body>
+</html>
